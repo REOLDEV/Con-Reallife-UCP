@@ -1,0 +1,499 @@
+<?php
+/*
+    ########## Con Reallife - User Control Panel ##########
+    (C) 2015 - 2018 SEMPERCODING.NET by Yannik Böltes
+    www.semper-coding.net
+    A non profit Project by Yannik Böltes
+*/
+
+SESSION_START();
+
+$settings = [
+    #Allgemeine Einstellungen
+    "servername" => "Con Reallife",                             #Firmenname
+    "companynameshort" => "CRL",                                #Firmenname in der Kurzform
+    "copyyear" => "2018",                                       #Copyright Jahr
+    "salt" => "vPdfq9kYfGrLWCcB8u8JFKbQCU7XA2fdkpcQC2BsXR9aqq8qWtQReux5VeSXXbCXfezWDCGaXBkENYQZmUsN48Yek92VLJVTXCWu6YWduRL3Ueapq34TJuMsXU5aDywNuecdfXp8SG25yspxSAPqgZb44Eytw3XsR2QHqsXzzKsy8pxzrPeCHPETLrEmcB7jAPcmjA2qTnqJBkbQ82mLCwya8VF8WuQ2tFDXG8XzgdDcU7UzVKj7mm75XTbX95AQe2n6pPq2gGD3TtXDjkknsSCM9BwjkH8Nkwqz3ZpKXGgApSaN9CSpkKRF5KuLujCXTKZdSy83tvC8Bx3XW452fDRCjvsUsANN7x5XH4G5PrU46KwaUbSnhwGMNHKszKmz2Ea5ZpjaL9THkVhW3WBuKMUcBsPMeDcFyz63saNWHT5WGfvjAWSybW3wHCcGSahSMdSQWHLkCuKnVcP4WAnAuXCBFWAjLTq33CaJV5jmM89KJhk5kk85MZbSwGgYPwsKjWgeCYPPTYMz3SP5zw6ZUZStDWGGXRT6mkD5MrFJaqdyFpGug6HYWeey52gQScJBJTNypv4KwCWtczPxdT9BepbgRer9YLzAxYy4Btd7fxFkWdQHVXpfrzqvHSV2BqUAXMeSbXRFPQGLp4zpxhPTVVM73nxSvCQep5ueUKLePmAwGKNCVGYmBdew3NF4vVRaybXCppN9pAdqAqdt8SzEzPPb7CFDw9Um9pGj4gX6FETru7GcTZEKpPTMEBWPJpQBsmf8u8UcKkN2HSG6zfgqxAMgT6Cg4PWjpYxBSpxqxnKPeH2bbJ9qVnsq4rp2U8QwKqy9T3VWd83sm3RyUEDXTdDqUFwf5Tx7HgDECNygLsLxShUzCL7qmg8VjGdJYpNqxhLkPkB3HD9fuNWEJVm287egcada8vNSA2eFzMJzcWjRcUt7m7mnEuEQQf7xYP8UcAQxRTGWfp6drmpGfFvnzSbvN7czjayPt6mt9VZKzS8QaAYUSAU65nmw9hmscbgT",                         #SALT
+
+    #Versionsnummern
+    "backendversion" => "1.0",                                  #Version des UCP
+
+    #Datenbankverbindung
+    "mysqlhost" => "",                                          #Server
+    "mysqluser" => "",                                          #Benutzername
+    "mysqldatabase" => "",                                      #Datenbank
+    "mysqlpassword" => "",                                      #Passwort
+];
+
+function getRealIpAddr()
+{
+    if (!empty($_SERVER['HTTP_CLIENT_IP']))   //check ip from share internet
+    {
+      $ip=$_SERVER['HTTP_CLIENT_IP'];
+    }
+    elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))   //to check ip is pass from proxy
+    {
+      $ip=$_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
+    else
+    {
+      $ip=$_SERVER['REMOTE_ADDR'];
+    }
+    return $ip;
+}
+
+#Mysql Verbindung
+$connection = mysqli_connect($settings["mysqlhost"],$settings["mysqluser"],$settings["mysqlpassword"],$settings["mysqldatabase"]);
+
+if (mysqli_connect_errno()) {
+    printf("Verbindung zur Mysql Datenbank fehlgeschlagen: %s\n", mysqli_connect_error());
+    exit();
+}
+
+function encryptIt( $q, $cryptKey ) {
+    $qEncoded      = base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), $q, MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ) );
+    return( $qEncoded );
+}
+
+function isPlayerOnline($connection, $playername) {
+    $name = mysqli_escape_string($connection, $playername);
+    $sql = "SELECT Name FROM loggedin WHERE Name = '" .$name. "'";
+    $check = mysqli_query($connection, $sql);
+    if(mysqli_num_rows($check) > 0){
+        echo '<span class="label label-success">Online</span>';
+    }else{ }
+}
+
+function getCarName($carid) {
+    if($carid < 400) {
+        $CarName = "Fehlerhafte ID!";
+    } else if ($carid > 611) {
+    $CarName = "Fehlerhafte ID!";
+    } else if ($carid == 400) {
+        $CarName = "Landstalker";
+    } else if ($carid == 401) {
+        $CarName = "Bravura";
+    } else if ($carid == 402) {
+        $CarName = "Buffalo";
+    } else if ($carid == 403) {
+        $CarName = "Linerunner";
+    } else if ($carid == 404) {
+        $CarName = "Perenniel";
+    } else if ($carid == 405) {
+        $CarName = "Sentinel";
+    } else if ($carid == 406) {
+        $CarName = "Dumper";
+    } else if ($carid == 407) {
+        $CarName = "Firetruck";
+    } else if ($carid == 408) {
+        $CarName = "Trashmaster";
+    } else if ($carid == 409) {
+        $CarName = "Stretch";
+    } else if ($carid == 410) {
+        $CarName = "Manana";
+    } else if ($carid == 411) {
+        $CarName = "Infernus";
+    } else if ($carid == 412) {
+        $CarName = "Voodoo";
+    } else if ($carid == 413) {
+        $CarName = "Pony";
+    } else if ($carid == 414) {
+        $CarName = "Mule";
+    } else if ($carid == 415) {
+        $CarName = "Cheetah";
+    } else if ($carid == 416) {
+        $CarName = "Ambulance";
+    } else if ($carid == 417) {
+        $CarName = "Leviathan";
+    } else if ($carid == 418) {
+        $CarName = "Moonbeam";
+    } else if ($carid == 419) {
+        $CarName = "Esperanto";
+    } else if ($carid == 420) {
+        $CarName = "Taxi";
+    } else if ($carid == 421) {
+        $CarName = "Washington";
+    } else if ($carid == 422) {
+        $CarName = "Bobcat";
+    } else if ($carid == 423) {
+        $CarName = "Mr Whoopee";
+    } else if ($carid == 424) {
+        $CarName = "BF Injection";
+    } else if ($carid == 425) {
+        $CarName = "Hunter";
+    } else if ($carid == 426) {
+        $CarName = "Premier";
+    } else if ($carid == 427) {
+        $CarName = "Enforcer";
+    } else if ($carid == 428) {
+        $CarName = "Securicar";
+    } else if ($carid == 429) {
+        $CarName = "Banshee";
+    } else if ($carid == 430) {
+        $CarName = "Predator";
+    } else if ($carid == 431) {
+        $CarName = "Bus";
+    } else if ($carid == 432) {
+        $CarName = "Rhino";
+    } else if ($carid == 433) {
+        $CarName = "Barracks";
+    } else if ($carid == 434) {
+        $CarName = "Hotknife";
+    } else if ($carid == 435) {
+        $CarName = "Article Trailer";
+    } else if ($carid == 436) {
+        $CarName = "Previon";
+    } else if ($carid == 437) {
+        $CarName = "Coach";
+    } else if ($carid == 438) {
+        $CarName = "Cabbie";
+    } else if ($carid == 439) {
+        $CarName = "Stallion";
+    } else if ($carid == 440) {
+        $CarName = "Rumpo";
+    } else if ($carid == 441) {
+        $CarName = "RC Bandit";
+    } else if ($carid == 442) {
+        $CarName = "Romero";
+    } else if ($carid == 443) {
+        $CarName = "Packer";
+    } else if ($carid == 444) {
+        $CarName = "Monster";
+    } else if ($carid == 445) {
+        $CarName = "Admiral";
+    } else if ($carid == 446) {
+        $CarName = "Squallo";
+    } else if ($carid == 447) {
+        $CarName = "Seasparrow";
+    } else if ($carid == 448) {
+        $CarName = "Pizzaboy";
+    } else if ($carid == 449) {
+        $CarName = "Tram";
+    } else if ($carid == 450) {
+        $CarName = "Article Trailer 2";
+    } else if ($carid == 451) {
+        $CarName = "Turismo";
+    } else if ($carid == 452) {
+        $CarName = "Speeder";
+    } else if ($carid == 453) {
+        $CarName = "Reefer";
+    } else if ($carid == 454) {
+        $CarName = "Tropic";
+    } else if ($carid == 455) {
+        $CarName = "Flatbed";
+    } else if ($carid == 456) {
+        $CarName = "Yankee";
+    } else if ($carid == 457) {
+        $CarName = "Caddy";
+    } else if ($carid == 458) {
+        $CarName = "Solair";
+    } else if ($carid == 459) {
+        $CarName = "TopFun Van (Berkley's RC)";
+    } else if ($carid == 460) {
+        $CarName = "Skimmer";
+    } else if ($carid == 461) {
+        $CarName = "PCJ-600";
+    } else if ($carid == 462) {
+        $CarName = "Faggio";
+    } else if ($carid == 463) {
+        $CarName = "Freeway";
+    } else if ($carid == 464) {
+        $CarName = "RC Baron";
+    } else if ($carid == 465) {
+        $CarName = "RC Raider";
+    } else if ($carid == 466) {
+        $CarName = "Glendale";
+    } else if ($carid == 467) {
+        $CarName = "Oceanic";
+    } else if ($carid == 468) {
+        $CarName = "Sanchez";
+    } else if ($carid == 469) {
+        $CarName = "Sparrow";
+    } else if ($carid == 470) {
+        $CarName = "Patriot";
+    } else if ($carid == 471) {
+        $CarName = "Quad";
+    } else if ($carid == 472) {
+        $CarName = "Coastguard";
+    } else if ($carid == 473) {
+        $CarName = "Dinghy";
+    } else if ($carid == 474) {
+        $CarName = "Hermes";
+    } else if ($carid == 475) {
+        $CarName = "Sabre";
+    } else if ($carid == 476) {
+        $CarName = "Rustler";
+    } else if ($carid == 477) {
+        $CarName = "ZR-350";
+    } else if ($carid == 478) {
+        $CarName = "Walton";
+    } else if ($carid == 479) {
+        $CarName = "Regina";
+    } else if ($carid == 480) {
+        $CarName = "Comet";
+    } else if ($carid == 481) {
+        $CarName = "BMX";
+    } else if ($carid == 482) {
+        $CarName = "Burrito";
+    } else if ($carid == 483) {
+        $CarName = "Camper";
+    } else if ($carid == 484) {
+        $CarName = "Marquis";
+    } else if ($carid == 485) {
+        $CarName = "Baggage";
+    } else if ($carid == 486) {
+        $CarName = "Dozer";
+    } else if ($carid == 487) {
+        $CarName = "Maverick";
+    } else if ($carid == 488) {
+        $CarName = "SAN News Maverick";
+    } else if ($carid == 489) {
+        $CarName = "Rancher";
+    } else if ($carid == 490) {
+        $CarName = "FBI Rancher";
+    } else if ($carid == 491) {
+        $CarName = "Virgo";
+    } else if ($carid == 492) {
+        $CarName = "Greenwood";
+    } else if ($carid == 493) {
+        $CarName = "Jetmax";
+    } else if ($carid == 494) {
+        $CarName = "Hotring Racer";
+    } else if ($carid == 495) {
+        $CarName = "Sandking";
+    } else if ($carid == 496) {
+        $CarName = "Blista Compact";
+    } else if ($carid == 497) {
+        $CarName = "Police Maverickt";
+    } else if ($carid == 498) {
+        $CarName = "Boxville";
+    } else if ($carid == 499) {
+        $CarName = "Benson";
+    } else if ($carid == 500) {
+        $CarName = "Mesa";
+    } else if ($carid == 501) {
+        $CarName = "RC Goblin";
+    } else if ($carid == 502) {
+        $CarName = "Hotring Racer";
+    } else if ($carid == 503) {
+        $CarName = "Hotring Racer";
+    } else if ($carid == 504) {
+        $CarName = "Bloodring Banger";
+    } else if ($carid == 505) {
+        $CarName = "Rancher";
+    } else if ($carid == 506) {
+        $CarName = "Super GT";
+    } else if ($carid == 507) {
+        $CarName = "Elegant";
+    } else if ($carid == 508) {
+        $CarName = "Journey";
+    } else if ($carid == 509) {
+        $CarName = "Bike";
+    } else if ($carid == 510) {
+        $CarName = "Mountain Bike";
+    } else if ($carid == 511) {
+        $CarName = "Beagle";
+    } else if ($carid == 512) {
+        $CarName = "Cropduster";
+    } else if ($carid == 513) {
+        $CarName = "Stuntplane";
+    } else if ($carid == 514) {
+        $CarName = "Tanker";
+    } else if ($carid == 515) {
+        $CarName = "Roadtrain";
+    } else if ($carid == 516) {
+        $CarName = "Nebula";
+    } else if ($carid == 517) {
+        $CarName = "Majestic";
+    } else if ($carid == 518) {
+        $CarName = "Buccaneer";
+    } else if ($carid == 519) {
+        $CarName = "Shamal";
+    } else if ($carid == 520) {
+        $CarName = "Hydra";
+    } else if ($carid == 521) {
+        $CarName = "FCR-900";
+    } else if ($carid == 522) {
+        $CarName = "NRG-500";
+    } else if ($carid == 523) {
+        $CarName = "HPV1000";
+    } else if ($carid == 524) {
+        $CarName = "Cement Truck";
+    } else if ($carid == 525) {
+        $CarName = "Towtruck";
+    } else if ($carid == 526) {
+        $CarName = "Fortune";
+    } else if ($carid == 527) {
+        $CarName = "Cadrona";
+    } else if ($carid == 528) {
+        $CarName = "FBI Truck";
+    } else if ($carid == 529) {
+        $CarName = "Willard";
+    } else if ($carid == 530) {
+        $CarName = "Forklift";
+    } else if ($carid == 531) {
+        $CarName = "Tractor";
+    } else if ($carid == 532) {
+        $CarName = "Combine Harvester";
+    } else if ($carid == 533) {
+        $CarName = "Feltzer";
+    } else if ($carid == 534) {
+        $CarName = "Remington";
+    } else if ($carid == 535) {
+        $CarName = "Slamvan";
+    } else if ($carid == 536) {
+        $CarName = "Blade";
+    } else if ($carid == 537) {
+        $CarName = "Freight (Train)";
+    } else if ($carid == 538) {
+        $CarName = "Brownstreak (Train)";
+    } else if ($carid == 539) {
+        $CarName = "Vortex";
+    } else if ($carid == 540) {
+        $CarName = "Vincent";
+    } else if ($carid == 541) {
+        $CarName = "Bullet";
+    } else if ($carid == 542) {
+        $CarName = "Clover";
+    } else if ($carid == 543) {
+        $CarName = "Sadler";
+    } else if ($carid == 544) {
+        $CarName = "Firetruck LA";
+    } else if ($carid == 545) {
+        $CarName = "Hustler";
+    } else if ($carid == 546) {
+        $CarName = "Intruder";
+    } else if ($carid == 547) {
+        $CarName = "Primo";
+    } else if ($carid == 548) {
+        $CarName = "Cargobob";
+    } else if ($carid == 549) {
+        $CarName = "Tampa";
+    } else if ($carid == 550) {
+        $CarName = "Sunrise";
+    } else if ($carid == 551) {
+        $CarName = "Merit";
+    } else if ($carid == 552) {
+        $CarName = "Utility Van";
+    } else if ($carid == 553) {
+        $CarName = "Nevada";
+    } else if ($carid == 554) {
+        $CarName = "Yosemite";
+    } else if ($carid == 555) {
+        $CarName = "Windsor";
+    } else if ($carid == 556) {
+        $CarName = 'Monster "A"';
+    } else if ($carid == 557) {
+        $CarName = 'Monster "B"';
+    } else if ($carid == 558) {
+        $CarName = "Uranus";
+    } else if ($carid == 559) {
+        $CarName = "Jester";
+    } else if ($carid == 560) {
+        $CarName = "Sultan";
+    } else if ($carid == 561) {
+        $CarName = "Stratum";
+    } else if ($carid == 562) {
+        $CarName = "Elegy";
+    } else if ($carid == 563) {
+        $CarName = "Raindance";
+    } else if ($carid == 564) {
+        $CarName = "RC Tiger";
+    } else if ($carid == 565) {
+        $CarName = "Flash";
+    } else if ($carid == 566) {
+        $CarName = "Tahoma";
+    } else if ($carid == 567) {
+        $CarName = "Savanna";
+    } else if ($carid == 568) {
+        $CarName = "Bandito";
+    } else if ($carid == 569) {
+        $CarName = "Freight Flat Trailer (Train)";
+    } else if ($carid == 570) {
+        $CarName = "Streak Trailer (Train)";
+    } else if ($carid == 571) {
+        $CarName = "Kart";
+    } else if ($carid == 572) {
+        $CarName = "Mower";
+    } else if ($carid == 573) {
+        $CarName = "Dune";
+    } else if ($carid == 574) {
+        $CarName = "Sweeper";
+    } else if ($carid == 575) {
+        $CarName = "Broadway";
+    } else if ($carid == 576) {
+        $CarName = "Tornado";
+    } else if ($carid == 577) {
+        $CarName = "AT400";
+    } else if ($carid == 578) {
+        $CarName = "DFT-30";
+    } else if ($carid == 579) {
+        $CarName = "Huntley";
+    } else if ($carid == 580) {
+        $CarName = "Stafford";
+    } else if ($carid == 581) {
+        $CarName = "BF-400";
+    } else if ($carid == 582) {
+        $CarName = "Newsvan";
+    } else if ($carid == 583) {
+        $CarName = "Tug";
+    } else if ($carid == 584) {
+        $CarName = "Petrol Trailer";
+    } else if ($carid == 585) {
+        $CarName = "Emperor";
+    } else if ($carid == 586) {
+        $CarName = "Wayfarer";
+    } else if ($carid == 587) {
+        $CarName = "Euros";
+    } else if ($carid == 588) {
+        $CarName = "Hotdog";
+    } else if ($carid == 589) {
+        $CarName = "Club";
+    } else if ($carid == 590) {
+        $CarName = "Freight Box Trailer (Train)";
+    } else if ($carid == 591) {
+        $CarName = "Article Trailer 3";
+    } else if ($carid == 592) {
+        $CarName = "Andromada";
+    } else if ($carid == 593) {
+        $CarName = "Dodo";
+    } else if ($carid == 594) {
+        $CarName = "RC Cam";
+    } else if ($carid == 595) {
+        $CarName = "Launch";
+    } else if ($carid == 596) {
+        $CarName = "Police Car (LSPD)";
+    } else if ($carid == 597) {
+        $CarName = "Police Car (SFPD)";
+    } else if ($carid == 598) {
+        $CarName = "Police Car (LVPD";
+    } else if ($carid == 599) {
+        $CarName = "Police Ranger";
+    } else if ($carid == 600) {
+        $CarName = "Picador";
+    } else if ($carid == 601) {
+        $CarName = "S.W.A.T.";
+    } else if ($carid == 602) {
+        $CarName = "Alpha";
+    } else if ($carid == 603) {
+        $CarName = "Phoenix";
+    } else if ($carid == 604) {
+        $CarName = "Glendale Shit";
+    } else if ($carid == 605) {
+        $CarName = "Sadler Shit";
+    } else if ($carid == 606) {
+        $CarName = 'Baggage Trailer "A"';
+    } else if ($carid == 607) {
+        $CarName = 'Baggage Trailer "B"';
+    } else if ($carid == 608) {
+        $CarName = "Tug Stairs Trailer";
+    } else if ($carid == 609) {
+        $CarName = "Boxville";
+    } else if ($carid == 610) {
+        $CarName = "Farm Trailer";
+    } else if ($carid == 611) {
+        $CarName = "Utility Trailer";
+    }
+    echo $CarName;
+}
+?>
